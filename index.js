@@ -28,6 +28,14 @@ io.on('connection', function(socket) {
     socket.on('check_views', function(result) {
         bot.telegram.sendMessage(id_kolya,'Заявка номер '+result[0])
         bot.telegram.sendPhoto(id_kolya,result[1])
+
+        bot.telegram.sendMessage(id_vlad,'Заявка номер '+result[0])
+        bot.telegram.sendPhoto(id_vlad,result[1])
+    });
+
+    socket.on('check_views_vlad', function(result) {
+        bot.telegram.sendMessage(id_vlad,'Заявка номер '+result[0])
+        bot.telegram.sendPhoto(id_vlad,result[1])
     });
 
     socket.on('processed', function(result) {
