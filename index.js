@@ -465,7 +465,8 @@ const stage=new Stage([PaymentScene_1,PaymentScene_2,PaymentScene_3,
                       Admin_1,
                       Check_1
                     ])
-const bot=new Telegraf('1922976147:AAFyOZ6r_BMdBSpfADzL9bTdJxBWupkNW4s')        // подключаемся к боту
+//const bot=new Telegraf('1922976147:AAFyOZ6r_BMdBSpfADzL9bTdJxBWupkNW4s')        // подключаемся к боту прод
+const bot=new Telegraf('6186520818:AAFBNqJgKMd0NDTl6CbxO2zzCGhW-5fJ4tg')        // подключаемся к боту test
 bot.use(session())
 bot.use(stage.middleware())
 bot.command('/start',ctx=>ctx.scene.enter('Start_1'))
