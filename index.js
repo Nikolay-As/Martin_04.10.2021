@@ -1,18 +1,23 @@
 const express = require('express')
 const app = express()
-const port = 3000||process.env.port
+const port = 3001||process.env.port
 
 var io = require('socket.io')(port);
+
 
 let chel=0;
 
 const mysql = require("mysql2");
   
 const pool = mysql.createPool({
-    host: 'nikolayhs.beget.tech',
-    user: 'nikolayhs_bot',
+    //host: 'nikolayhs.beget.tech',
+    //user: 'nikolayhs_bot',
+    //database: 'nikolayhs_bot',
+    //password:'Nikolayhs_bot',
+    host: 'localhost',
+    user: 'root',
     database: 'nikolayhs_bot',
-    password:'Nikolayhs_bot',
+    password:'ahtiger2',
   });
 
   // Parse URL-encoded bodies (as sent by HTML forms)
@@ -26,11 +31,18 @@ io.on('connection', function(socket) {
 
 
     socket.on('check_views', function(result) {
-        bot.telegram.sendMessage(id_kolya,'Заявка номер '+result[0])
+        bot.telegram.sendMessage(id_kolya,'Заявка номер '+result[0]).catch((e)=>{console.log(e)})
+        if (result[1]){
         bot.telegram.sendPhoto(id_kolya,result[1])
+        bot.telegram.sendPhoto(id_vlad,result[1])
+        bot.telegram.sendPhoto(id_roma,result[1])
+       // bot.telegram.sendPhoto(id_andrey,result[1])
+        }
 
         bot.telegram.sendMessage(id_vlad,'Заявка номер '+result[0])
-        bot.telegram.sendPhoto(id_vlad,result[1])
+        bot.telegram.sendMessage(id_roma,'Заявка номер '+result[0])
+        //bot.telegram.sendMessage(id_andrey,'Заявка номер '+result[0])
+        //bot.telegram.sendPhoto(id_vlad,result[1])
     });
 
     socket.on('check_views_vlad', function(result) {
@@ -71,24 +83,19 @@ app.post('/error', (req, res) => {
         bot.telegram.sendMessage(req.body.id_user,'Заявка номер '+req.body.id+' не обработана(ошибка в заявке), напиши админу')
 })
 
-//app.listen(port, () => {
-//  console.log(`Example app listening at http://localhost:${port}`)
-//})
-
-
-
 
 
 
 const {Telegraf,session,Scenes:{BaseScene,Stage},Markup}=require('telegraf')
 
-const bot_token=require( './botinfo')  // получаем токен бота
+const bot_token='1922976147:AAFyOZ6r_BMdBSpfADzL9bTdJxBWupkNW4s';  // получаем токен бота
 
-//console.log("AgACAgIAAxkBAAIBu2FCHXuyta-AFMfza5T95BRwmhewAAI3uDEb3bwQSoPZNOas0PWsAQADAgADcwADIAQ")
 
 
   const id_vlad='846809274'
   const id_kolya='841304292'
+  const id_roma='1065423969'
+  //const id_andrey='1737594249'
 
 const remove_keyboard=Markup.removeKeyboard()
 const menu_keyboard=Markup.keyboard(['💸Оставить заявку на оплату',
@@ -97,7 +104,6 @@ const menu_keyboard=Markup.keyboard(['💸Оставить заявку на о�
                                     '⚠Сообщить о проблеме',
                                     '📋Инструкции',
                                     '🚨Пнуть админа,чтобы обработал заявку🤬']).oneTime() // общее меню бота
-                                  // '🚨Пнуть проайдера,чтобы лучше работал']).oneTime() // общее меню бота
 
 const menu_instructions=Markup.keyboard(['💳Узнать номер карты',
                                         '⬅️Назад']).oneTime()
@@ -105,11 +111,6 @@ const menu_instructions=Markup.keyboard(['💳Узнать номер карты
  const menu_otmena=Markup.keyboard(['🚫Отмена']).oneTime()
 
                                         
-
-
-
-
-
 
 // Сцена, для заявки на оплату -------- ( номер комнаты)
 const PaymentScene_1=new BaseScene('PaymentScene_1')
@@ -133,38 +134,16 @@ PaymentScene_2.on('text',ctx=>{
 const PaymentScene_3=new BaseScene('PaymentScene_3')
 PaymentScene_3.enter(ctx=>ctx.reply('Отправь скрин платежа'))
  PaymentScene_3.on('photo',ctx=>{
+    console.log(ctx.message)
     ctx.session.foto=ctx.message.photo[0].file_id
     ctx.reply(`Заявка принята`,menu_keyboard)
-   // ctx.reply(`Содержание вашей заявки:\n- №комнаты:${ctx.session.number_room}\n- ФИО:${ctx.session.fio}\n- Скрин:`);
     return ctx.scene.leave()
 })
 PaymentScene_3.leave(ctx=>{
-   
-    let getHours=new Date().getHours() // Определяем время заявки
-    let getMinutes=new Date().getMinutes();
-    let getSeconds=new Date().getSeconds();
-    let time=getHours+':'+getMinutes+':'+getSeconds;
+    if (ctx.message.text!="/start"){
 
-
-    let year=new Date().getFullYear(); // Определяем Дату заявки
-    let mounth=new Date().getMonth();
-    let day=new Date().getDay();
-    //let date=year+'-'+mounth+'-'+day;
-
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
-
-    var date = yyyy + '-' + mm + '-'+ dd;
-
-
-    console.log(date)
-    //console.log(today)
-    
-
-    const data=[ctx.from.id,'Оплата',ctx.session.number_room,ctx.session.fio,ctx.session.foto,date,time]; // Формируем структуру данных для записи в БД
-   const sql = "INSERT INTO applications(id_user,type,  room_number,fio_user,file_id,date,time) VALUES(?,?,?,?,?,?,?)";
+    const data=[ctx.from.id,'Оплата',ctx.session.number_room,ctx.session.fio,ctx.session.foto]; // Формируем структуру данных для записи в БД
+   const sql = "INSERT INTO applications(id_user,type,  room_number,fio_user,file_id,date,time) VALUES(?,?,?,?,?,Now(),Now())";
    pool.query(sql, data   , function(err, results) {
     if(err) console.log(err);
     else {
@@ -172,10 +151,14 @@ PaymentScene_3.leave(ctx=>{
         ctx.reply(`Номер вашей заявки : ${results.insertId}`)
         bot.telegram.sendMessage(id_kolya,`Поступила заявка №(${results.insertId}) на оплату от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
         bot.telegram.sendMessage(id_vlad,`Поступила заявка №(${results.insertId}) на оплату от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
+        bot.telegram.sendMessage(id_roma,`Поступила заявка №(${results.insertId}) на оплату от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
+        //bot.telegram.sendMessage(id_andrey,`Поступила заявка №(${results.insertId}) на оплату от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
     }
 
 });
 
+}else{ 
+ctx.reply(`Не удалось создать заявку, повторите попыткуу!`)}
 })
 // ------------------
 
@@ -207,25 +190,19 @@ Add_change_mac_2.on('text',ctx=>{
 const Add_change_mac_3=new BaseScene('Add_change_mac_3')
 Add_change_mac_3.enter(ctx=>ctx.reply('Напиши Mac-адреса, всех устройств(через пробел), которые должны быть подключены.',remove_keyboard))
 Add_change_mac_3.on('text',ctx=>{
+    if (ctx.message.text === "/start"){
+    ctx.reply(`Попробуй еще раз отправить МАК адреса`) 
+    } else{
     ctx.session.mac=ctx.message.text
     ctx.reply(`Заявка принята`,menu_keyboard)
     return ctx.scene.leave()
+    }
 })
 
 Add_change_mac_3.leave(ctx=>{
-    let getHours=new Date().getHours() // Определяем время заявки
-    let getMinutes=new Date().getMinutes();
-    let getSeconds=new Date().getSeconds();
-    let time=getHours+':'+getMinutes+':'+getSeconds;
 
-
-    let year=new Date().getFullYear(); // Определяем Дату заявки
-    let mounth=new Date().getMonth();
-    let day=new Date().getDay();
-    let date=year+'-'+mounth+'-'+day;
-
-    const data=[ctx.from.id,'MAC',ctx.session.number_room,ctx.session.fio,ctx.session.mac,date,time]; // Формируем структуру данных для записи в БД
-    const sql = "INSERT INTO applications(id_user,type,  room_number,fio_user,comment,date,time) VALUES(?,?,?,?,?,?,?)";
+    const data=[ctx.from.id,'MAC',ctx.session.number_room,ctx.session.fio,ctx.session.mac]; // Формируем структуру данных для записи в БД
+    const sql = "INSERT INTO applications(id_user,type,  room_number,fio_user,comment,date,time) VALUES(?,?,?,?,?,Now(),Now())";
     pool.query(sql, data   , function(err, results) {
      if(err) console.log(err);
      else {
@@ -233,6 +210,8 @@ Add_change_mac_3.leave(ctx=>{
          ctx.reply(`Номер вашей заявки : ${results.insertId}`)
          bot.telegram.sendMessage(id_kolya,`Поступила заявка №(${results.insertId}) на добавление/удаление MAC-ов от  (${ctx.session.fio}) комната (${ctx.session.number_room})`)
          bot.telegram.sendMessage(id_vlad,`Поступила заявка №(${results.insertId}) на добавление/удаление MAC-ов от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
+         bot.telegram.sendMessage(id_roma,`Поступила заявка №(${results.insertId}) на добавление/удаление MAC-ов от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
+         //bot.telegram.sendMessage(id_andrey,`Поступила заявка №(${results.insertId}) на добавление/удаление MAC-ов от (${ctx.session.fio}) комната (${ctx.session.number_room})`)
      }
  
  });
@@ -279,11 +258,14 @@ Check_status_1.leave(ctx=>{
 const Kick_1=new BaseScene('Kick_1')
 Kick_1.enter(ctx=>{
     ctx.reply(`🦿Пнул тебя!🤬`,menu_keyboard)
+    console.log(ctx.from.id)
     return ctx.scene.leave()
 })
 Kick_1.leave(ctx=>{
     bot.telegram.sendMessage(id_kolya,`Пинает тебя,\n(@${ctx.from.username})\n(${ctx.from.first_name})\n(${ctx.from.last_name})\n(${ctx.from.id})\n пинает тебя`)
     bot.telegram.sendMessage(id_vlad,`Пинает тебя,\n(@${ctx.from.username})\n(${ctx.from.first_name})\n(${ctx.from.last_name})\n(${ctx.from.id})\n пинает тебя`)
+    bot.telegram.sendMessage(id_roma,`Пинает тебя,\n(@${ctx.from.username})\n(${ctx.from.first_name})\n(${ctx.from.last_name})\n(${ctx.from.id})\n пинает тебя`)
+    //bot.telegram.sendMessage(id_andrey,`Пинает тебя,\n(@${ctx.from.username})\n(${ctx.from.first_name})\n(${ctx.from.last_name})\n(${ctx.from.id})\n пинает тебя`)
 })
 // ------------------
 
@@ -308,6 +290,7 @@ Instructions_1.leave(ctx=>{
 const Start_1=new BaseScene('Start_1')
 Start_1.enter(ctx=>{
     ctx.reply('Привет, меня зовут Мартин.\nЯ бот сети II AMPERA\nТеперь я знаю о тебе и буду помогать тебе взаимодействовать с админами.',menu_keyboard)
+    //console.log(ctx.from.id);
     ctx.telegram.sendPhoto(ctx.from.id,'AgACAgIAAxkBAAIDqWFDWvI_gj7mdkv8N7ewCIex_jLgAAIZtjEbSKYZSj26dNRDnU9WAQADAgADeAADIAQ');
 
     // Проверка есть ли в базе такой пользоатель ----------
@@ -383,7 +366,7 @@ Problem_1.leave(ctx=>{
 // Сцена, админы -------- (  )
 const Admin_1=new BaseScene('Admin_1')
 Admin_1.enter(ctx=>{
-    if (ctx.from.id!=id_kolya & ctx.from.id!=id_vlad ){
+    if (ctx.from.id!=id_kolya & ctx.from.id!=id_vlad & ctx.from.id!=id_roma  ){
         ctx.reply('Ты не мой хозяин!')
         return ctx.scene.leave()
     }else{
@@ -398,10 +381,9 @@ Admin_1.enter(ctx=>{
                 }
                 else {
                     for(i=0;i<results.length;i++){
-                        if (ctx.from.id==id_kolya || ctx.from.id==id_vlad ){
-                        bot.telegram.sendMessage(results[i].chat_id,ctx.message.text)
+                        if (ctx.from.id==id_kolya || ctx.from.id==id_vlad || ctx.from.id==id_roma ){
+                        bot.telegram.sendMessage(results[i].chat_id,ctx.message.text).catch((e)=>{console.log(e)})
                         console.log(results[i].id)
-                        //console.log('Тут свои')
                         }else{
                         console.log('тут чужак')
                         }
@@ -428,7 +410,7 @@ Admin_1.leave(ctx=>{
 // Сцена, просмотра  заявок (  )
 const Check_1=new BaseScene('Check_1')
 Check_1.enter(ctx=>{
-    if (ctx.from.id==id_kolya || ctx.from.id==id_vlad ){
+    if (ctx.from.id==id_kolya || ctx.from.id==id_vlad || ctx.from.id==id_roma ){
     ctx.reply('Напиши номер заявки');
     Check_1.on('text',ctx=>{
         ctx.session.number_app=Number(ctx.message.text)
@@ -483,7 +465,7 @@ const stage=new Stage([PaymentScene_1,PaymentScene_2,PaymentScene_3,
                       Admin_1,
                       Check_1
                     ])
-const bot=new Telegraf(bot_token)        // подключаемся к боту
+const bot=new Telegraf('1922976147:AAFyOZ6r_BMdBSpfADzL9bTdJxBWupkNW4s')        // подключаемся к боту
 bot.use(session())
 bot.use(stage.middleware())
 bot.command('/start',ctx=>ctx.scene.enter('Start_1'))
@@ -508,6 +490,6 @@ bot.command('/check',ctx=>ctx.scene.enter('Check_1'))
 
 
 
-
+bot.catch((err)=>{console.log(err)})
 
 bot.launch()
